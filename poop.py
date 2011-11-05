@@ -25,11 +25,21 @@ def show_text_NE(ctx, text, x, y):
     ctx.move_to(x - te[2], y - te[1])
     ctx.show_text(text)
 
+def show_text_N(ctx, text, x, y):
+    te = ctx.text_extents(text)
+    ctx.move_to(x - te[2]/2, y - te[1])
+    ctx.show_text(text)
+
 def show_text_NW(ctx, text, x, y):
     #fe = ctx.font_extents()
     #print(fe)
     te = ctx.text_extents(text)
     ctx.move_to(x, y - te[1])
+    ctx.show_text(text)
+
+def show_text_S(ctx, text, x, y):
+    te = ctx.text_extents(text)
+    ctx.move_to(x - te[2]/2, y)
     ctx.show_text(text)
 
 class Coord(namedtuple('Coord', ('x', 'y'))):
@@ -62,6 +72,11 @@ class Time(namedtuple('Time', ('hour', 'minute'))):
     def get_minute_within_day(self):
         return self.hour * 60 + self.minute
 
+class Column(namedtuple('Column',
+                        ('name', 'startx', 'endx', 'subcolumns'))):
+    def centre_x(self):
+        return (self.endx + self.startx)/2
+
 class Layout:
     def __init__(self, size):
         self.size = size
@@ -73,15 +88,45 @@ class Layout:
         self.colheading_y = 20
         self.grid_tl = Coord(50, 40)
 
+        colnames  = ['Feeding', 'Awake', 'Sleeping', 'Diapers', 'Notes']
+        relcolwidths = (1.0, 0.5, 0.5, 2.0, 1.0)
+        self.columns = []
+        startx = 100
+        colwidth = 100
+        for i, (colname, relcolwidth) in enumerate(zip(colnames, relcolwidths)):
+            width = colwidth * relcolwidth
+            endx = startx + width
+
+            if colname == 'Diapers':
+                subcolumns = []
+                substartx = startx
+                for j, (subname, relcolwidth) in enumerate(zip(['Urine', 'Stool', 'Clean'],
+                                                               [1.0, 1.0, 0.5])):
+                    subwidth = width * relcolwidth / 2.5
+                    subendx = substartx + subwidth
+                    subcolumns.append(Column(subname,
+                                             substartx,
+                                             subendx,
+                                             []))
+                    substartx += subwidth
+            else:
+                subcolumns = []
+            column = Column(colname, startx, endx, subcolumns)
+            self.columns.append(column)
+            startx += width
+
     def get_y_for_time(self, time):
         return self.grid_tl.y + (time.get_minute_within_day() * 0.50)
 
     def get_x_for_time(self):
         return self.grid_tl.x
 
+    def get_x_for_column(self, idx):
+        return 100 + (idx * 125)
+
     def render(self, ctx):
         layout._render_times(ctx)
-        layout._render_columns(ctx)
+        layout._render_columns(ctx, self.columns, 0)
 
     def _render_times(self, ctx):
         for hour in range(0, 24):
@@ -112,17 +157,31 @@ class Layout:
                 ctx.line_to(self.size.x-5, y)
                 ctx.stroke()
 
-    def _render_columns(self, ctx):
-        cols = ['Feeding', 'Awake/Asleep', 'Diapers (urine/stools)', 'Notes']
-        for i, colname in enumerate(cols):
+    def _render_columns(self, ctx, columns, depth):
+        heading_y = 20 + (10 * depth)
+        if columns:
             ctx.set_source_rgba(*self.headingcolor)
-            x = 100 + i * 125
-            show_text_NW(ctx, colname, x, 20)
-
             ctx.set_line_width(0.1)
-            ctx.move_to(x, 0)
+            ctx.move_to(columns[0].startx, heading_y)
+            ctx.line_to(columns[-1].endx, heading_y)
+            ctx.stroke()
+
+        for column in columns:
+            ctx.set_source_rgba(*self.headingcolor)
+            show_text_N(ctx, column.name, column.centre_x(), heading_y)
+
+            x = column.startx
+            ctx.set_line_width(0.1)
+            ctx.move_to(x, heading_y)
             ctx.line_to(x, self.size.y)
             ctx.stroke()
+
+            if column.subcolumns:
+                ctx.move_to(column.startx, heading_y)
+                ctx.line_to(column.endx, heading_y)
+                ctx.stroke()
+
+            self._render_columns(ctx, column.subcolumns, depth + 1)
 
 def inch_to_point(inch):
     return inch * 72.0
