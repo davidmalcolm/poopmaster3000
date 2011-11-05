@@ -82,8 +82,8 @@ class Layout:
         self.size = size
         self.headingcolor = (0, 0, 0, 1)
         self.hourcolor = (0, 0, 0, 1)
-        self.color15mins = (0, 0, 0, 0.25)
-        self.color5mins = (0, 0, 0, 0.1)
+        self.color15mins = (0, 0, 0, 0.75)
+        self.color5mins = (0, 0, 0, 0.3)
 
         self.colheading_y = 20
         self.grid_tl = Coord(50, 40)
@@ -136,10 +136,13 @@ class Layout:
                 y = self.get_y_for_time(time)
 
                 if minute == 0: # and hour == 0:
+                    ctx.set_line_width(0.5)
                     ctx.set_source_rgba(*self.hourcolor)
                 elif minute % 15 == 0:
+                    ctx.set_line_width(0.2)
                     ctx.set_source_rgba(*self.color15mins)
                 else:
+                    ctx.set_line_width(0.2)
                     ctx.set_source_rgba(*self.color5mins)
 
                 # Draw text:
@@ -152,7 +155,6 @@ class Layout:
                     show_text_NE(ctx, str(minute), x, y)
 
                 # Draw lines:
-                ctx.set_line_width(0.1)
                 ctx.move_to(5, y)
                 ctx.line_to(self.size.x-5, y)
                 ctx.stroke()
