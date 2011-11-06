@@ -45,12 +45,23 @@ def show_text_S(ctx, text, x, y):
 class Coord(namedtuple('Coord', ('x', 'y'))):
     pass
 
-class Time(namedtuple('Time', ('hour', 'minute'))):
+class Time(namedtuple('Time', ('hour', 'minute', 'hoursinday'))):
     def __str__(self):
         return '%s:%02i %s' % (self.hour12(), self.minute, self.ampm())
 
+    def apparent_hour(self):
+        if self.hoursinday == 23:
+            # Make clock go forward an hour at 2am:
+            if self.hour >= 2:
+                return self.hour + 1
+        if self.hoursinday == 25:
+            # Make clock go back an hour at 2am:
+            if self.hour > 2:
+                return self.hour - 1
+        return self.hour
+
     def hour12(self):
-        h = self.hour
+        h = self.apparent_hour()
         if h >= 12:
             h -= 12
         if h == 0:
@@ -61,10 +72,22 @@ class Time(namedtuple('Time', ('hour', 'minute'))):
         if self.is_pm():
             return 'pm'
         else:
+            if self.hoursinday == 23:
+                # Indicate TZ changeover at 2am:
+                if self.hour == 1:
+                    return 'am EST'
+                if self.hour == 2:
+                    return 'am EDT'
+            if self.hoursinday == 25:
+                # Indicate TZ changeover at 2am:
+                if self.hour == 2:
+                    return 'am EDT'
+                if self.hour == 3:
+                    return 'am EST'
             return 'am'
 
     def is_pm(self):
-        if self.hour < 12:
+        if self.apparent_hour() < 12:
             return False
         else:
             return True
@@ -80,6 +103,11 @@ class Column(namedtuple('Column',
 class Layout:
     def __init__(self, size):
         self.size = size
+
+        #self.hoursinday = 23 # "spring forward"
+        #self.hoursinday = 25 # "fall back"
+        self.hoursinday = 24
+
         self.headingcolor = (0, 0, 0, 1)
         self.hourcolor = (0, 0, 0, 1)
         self.color15mins = (0, 0, 0, 0.75)
@@ -129,9 +157,9 @@ class Layout:
         layout._render_columns(ctx, self.columns, 0)
 
     def _render_times(self, ctx):
-        for hour in range(0, 24):
+        for hour in range(0, self.hoursinday):
             for minute in range(0, 60, 5):
-                time = Time(hour, minute)
+                time = Time(hour, minute, self.hoursinday)
                 x = self.get_x_for_time()
                 y = self.get_y_for_time(time)
 
