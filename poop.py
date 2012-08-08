@@ -1,4 +1,4 @@
-#   Copyright 2011 David Malcolm <dmalcolm@redhat.com>
+#   Copyright 2011, 2012 David Malcolm <dmalcolm@redhat.com>
 #
 #   This is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ class Layout:
         self.grid_tl = Coord(50, 40)
 
         colnames  = ['Feeding', 'Awake', 'Sleeping', 'Diapers', 'Notes']
-        relcolwidths = (1.0, 0.5, 0.5, 2.0, 1.0)
+        relcolwidths = (2.0, 0.5, 0.5, 1.0, 1.0)
         self.columns = []
         startx = 100
         colwidth = 100
@@ -128,7 +128,7 @@ class Layout:
             if colname == 'Diapers':
                 subcolumns = []
                 substartx = startx
-                for j, (subname, relcolwidth) in enumerate(zip(['Urine', 'Stool', 'Clean'],
+                for j, (subname, relcolwidth) in enumerate(zip(['Urine', 'Stool', 'Dry'],
                                                                [1.0, 1.0, 0.5])):
                     subwidth = width * relcolwidth / 2.5
                     subendx = substartx + subwidth
