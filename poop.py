@@ -56,7 +56,7 @@ class Time(namedtuple('Time', ('hour', 'minute', 'hoursinday'))):
                 return self.hour + 1
         if self.hoursinday == 25:
             # Make clock go back an hour at 2am:
-            if self.hour > 2:
+            if self.hour > 1:
                 return self.hour - 1
         return self.hour
 
@@ -80,9 +80,9 @@ class Time(namedtuple('Time', ('hour', 'minute', 'hoursinday'))):
                     return 'am EDT'
             if self.hoursinday == 25:
                 # Indicate TZ changeover at 2am:
-                if self.hour == 2:
+                if self.hour == 1:
                     return 'am EDT'
-                if self.hour == 3:
+                if self.hour == 2:
                     return 'am EST'
             return 'am'
 
@@ -101,12 +101,9 @@ class Column(namedtuple('Column',
         return (self.endx + self.startx)/2
 
 class Layout:
-    def __init__(self, size):
+    def __init__(self, size, hoursinday):
         self.size = size
-
-        #self.hoursinday = 23 # "spring forward"
-        #self.hoursinday = 25 # "fall back"
-        self.hoursinday = 24
+        self.hoursinday = hoursinday
 
         self.headingcolor = (0, 0, 0, 1)
         self.hourcolor = (0, 0, 0, 1)
@@ -232,6 +229,11 @@ ctx = cairo.Context(surf)
 ctx.set_source_rgb(1, 1, 1)
 ctx.paint()
 
-layout = Layout(pagesize_points)
+
+#hoursinday = 23 # "spring forward"
+hoursinday = 25 # "fall back"
+#hoursinday = 24
+
+layout = Layout(pagesize_points, hoursinday)
 layout.render(ctx)
 surf.finish()
